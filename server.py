@@ -1,82 +1,18 @@
-from __future__ import print_function
-import jwt
-import yaml
-from tornado import websocket
-import tornado.ioloop
+from tornado import websocket, ioloop, web
 import json
-import dronekit
-import time
+from auth import Auth
+from drone import Drone
 import threading
-from flight import arm_and_takeoff, land, condition_yaw
-
-
-class DroneHandler:
-    def __init__(self, connection_string, config_file="config.yaml"):
-        self.connection_string = connection_string
-        self.connected = False
-        self.initialized = False
-        self.vehicle = None
-
-        thread = threading.Thread(target=self.run)
-        thread.start()
-
-    def arm(self, arg):
-        self.vehicle.armed = arg
-
-    def armed(self):
-        return self.vehicle.armed
-
-    def run(self):
-        self.vehicle = dronekit.connect(
-            self.connection_string, wait_ready=True)
-        self.connected = True
-
-    def stream_altitude(self):
-        return self.vehicle.location.global_relative_frame.alt
-
-    def is_created(self):
-        return self.vehicle.system_status
-
-    def initialize(self):
-        print("Initalizing")
-        self.vehicle.initialize()
-        self.initialized = True
-
-    def fucking_fly_bitch(self, alt):
-        print("FUCKING FLYING")
-        while not arm_and_takeoff(alt, self.vehicle):
-            pass
-        condition_yaw(360, self.vehicle, True)
-        time.sleep(10)
-        land(self.vehicle)
-
-
-class AuthHandler:
-    def __init__(self, config_file="config.yaml"):
-        self.config_file = config_file
-        self.config = None
-        self.load_config()
-
-    def load_config(self):
-        with open("config.yaml", 'r') as stream:
-            try:
-                self.config = yaml.load(stream)
-            except yaml.YAMLError as ex:
-                print(ex)
-
-    def get_config(self, config_attribute):
-        return self.config[config_attribute]
-
-    def verify_token(self, token):
-        secret = self.get_config('jwt')['secret']
-        decoded = jwt.decode(token, secret)
-        print(decoded)
+import time
 
 
 class EchoWebSocket(websocket.WebSocketHandler):
     def initialize(self, auth_handler, drone_handler):
         self.auth_handler = auth_handler
         self.drone_handler = drone_handler
+        self.streaming = threading.Event()
+        self.streamer_thread = threading.Thread(
+            target=self.stream_status, args=(self.streaming,))
 
     def check_origin(self, origin):
         return True
@@ -86,25 +22,45 @@ class EchoWebSocket(websocket.WebSocketHandler):
 
     def on_message(self, message):
         request = json.loads(message)
-        # if not 'token' in request:
-        #     self.write_message('No access token')
-        print(request)
+        if not 'token' in request:
+            self.write_message('No access token')
+        self.auth_handler.verify_token(request['token'])
+
         if not 'command' in request:
             self.write_message('There is no command')
         if request['command'] == 'arm':
+            self.write_message('{"status": "acknowleged", "armed": true"}')
             drone_handler.arm(True)
         if request['command'] == 'go':
-            print("here")
             drone_handler.fucking_fly_bitch(0.3)
-        # self.auth_handler.verify_token(request['token'])
+        if request['command'] == 'stream_status':
+            self.streamer_thread.start()
+        if request['command'] == 'stop_status_stream':
+            self.streaming.set()
+
+    def stream_status(self, stopper, interval=0.25):
+        while not stopper.isSet():
+            status = self.drone_handler.status()
+            status['type'] = 'status'
+            status_json = json.dumps(status, default=self.dumper, indent=2)
+            self.write_message(status_json)
+            time.sleep(interval)
+
+    def dumper(self, obj):
+        try:
+            return obj.toJSON()
+        except:
+            return obj.__dict__
 
     def on_close(self):
         print("Websocket closed")
+        self.streaming.set()
+        self.streamer_thread.join()
 
 
-drone_handler = DroneHandler("/dev/ttyACM1")
-auth_handler = AuthHandler()
-application = tornado.web.Application(
+drone_handler = Drone("tcp:127.0.0.1:5760")
+auth_handler = Auth()
+application = web.Application(
     [("/", EchoWebSocket, dict(auth_handler=auth_handler, drone_handler=drone_handler)), ])
 
 if __name__ == "__main__":
@@ -114,4 +70,4 @@ if __name__ == "__main__":
 
     print("Drone initialized and Server starting")
     application.listen(9000)
-    tornado.ioloop.IOLoop.instance().start()
+    ioloop.IOLoop.instance().start()
