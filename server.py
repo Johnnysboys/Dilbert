@@ -47,8 +47,9 @@ class EchoWebSocket(websocket.WebSocketHandler):
             data = self.drone_handler.status()
             response = {
                 'type': 'status',
-                'data':}
-            response_json = json.dumps(response, indent=2)
+                'data': data
+            }
+            response_json = json.dumps(response, default=dumper, indent=2)
             self.write_message(response)
             time.sleep(interval)
 
@@ -56,6 +57,12 @@ class EchoWebSocket(websocket.WebSocketHandler):
         print("Websocket closed")
         self.streaming.set()
         self.streamer_thread.join()
+
+    def dumper(self, obj):
+        try:
+            return obj.toJSON()
+        except:
+            return obj.__dict__
 
 
 drone_handler = Drone("/dev/ttyACM0")
