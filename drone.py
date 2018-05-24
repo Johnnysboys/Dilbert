@@ -25,13 +25,17 @@ class Drone:
         self.connected = True
 
     def status(self):
+        battery = self.vehicle.battery
+        position = self.vehicle.location.global_relative_frame,
+        mode = self.vehicle.mode
+        velocity = self.vehicle.velocity
         status = {
-            'position': self.vehicle.location.global_relative_frame,
-            'velocity': self.vehicle.velocity,
+            'position': position
+            'velocity': velocity,
             'heading':  self.vehicle.heading,
-            'mode':     self.vehicle.mode,
+            'mode':     mode
             'armed':    self.vehicle.armed,
-            'battery':  self.vehicle.battery
+            'battery':  battery
         }
         return status
 

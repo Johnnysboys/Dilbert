@@ -24,7 +24,6 @@ class EchoWebSocket(websocket.WebSocketHandler):
         request = json.loads(message)
         if not 'token' in request:
             self.write_message('No access token')
-        print(request['token'])
         self.auth_handler.verify_token(request['token'])
 
         if not 'command' in request:
@@ -45,6 +44,7 @@ class EchoWebSocket(websocket.WebSocketHandler):
 
     def stream_status(self, stop, interval=0.25):
         while not stop.isSet():
+            print(self.drone_handler.status())
             response = {
                 'type': 'status',
                 'data': self.drone_handler.status()
