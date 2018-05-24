@@ -32,25 +32,25 @@ class EchoWebSocket(websocket.WebSocketHandler):
             self.write_message('{"status": "acknowleged", "armed": true"}')
             drone_handler.arm(True)
         if request['command'] == 'go':
-            drone_handler.fucking_fly_bitch(0.3)
+            alt = 0.3
+            if 'alt' in request
+                alt = request['alt']
+            drone_handler.fucking_fly_bitch(alt)
+
         if request['command'] == 'stream_status':
             self.streamer_thread.start()
         if request['command'] == 'stop_status_stream':
             self.streaming.set()
 
-    def stream_status(self, stopper, interval=0.25):
-        while not stopper.isSet():
-            status = self.drone_handler.status()
-            status['type'] = 'status'
-            status_json = json.dumps(status, default=self.dumper, indent=2)
-            self.write_message(status_json)
+    def stream_status(self, stop, interval=0.25):
+        while not stop.isSet():
+            response = {
+                'type': 'status',
+                'data': self.drone_handler.status()
+            }
+            response_json = json.dumps(response, indent=2)
+            self.write_message(response)
             time.sleep(interval)
-
-    def dumper(self, obj):
-        try:
-            return obj.toJSON()
-        except:
-            return obj.__dict__
 
     def on_close(self):
         print("Websocket closed")

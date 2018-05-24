@@ -1,7 +1,7 @@
 import threading
 import dronekit
 import time
-from flight import arm_and_takeoff, condition_yaw, land
+from flight import arm_and_takeoff, condition_yaw, land, goto
 
 
 class Drone:
@@ -25,19 +25,13 @@ class Drone:
         self.connected = True
 
     def status(self):
-        position = self.vehicle.location.global_relative_frame
-        velocity = self.vehicle.velocity
-        heading = self.vehicle.heading
-        mode = self.vehicle.mode
-        armed = self.vehicle.armed
-        battery = self.vehicle.battery
         status = {
-            'position': position,
-            'velocity': velocity,
-            'heading': heading,
-            'mode': mode,
-            'armed': armed,
-            'battery': battery
+            'position': self.vehicle.location.global_relative_frame,
+            'velocity': self.vehicle.velocity,
+            'heading':  self.vehicle.heading,
+            'mode':     self.vehicle.mode,
+            'armed':    self.vehicle.armed,
+            'battery':  self.vehicle.battery
         }
         return status
 
@@ -53,6 +47,9 @@ class Drone:
         print("FUCKING FLYING")
         while not arm_and_takeoff(alt, self.vehicle):
             pass
-        condition_yaw(360, self.vehicle, True)
-        time.sleep(10)
+        goto(0, 0, self.vehicle, self.vehicle.simple_goto)
+        condition_yaw(0, self.vehicle, False)
+        time.sleep(5)
+        condition_yaw(180, self.vehicle, False)
+
         land(self.vehicle)
