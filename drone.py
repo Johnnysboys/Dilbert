@@ -30,7 +30,7 @@ class Drone:
         mode = self.vehicle.mode
         velocity = self.vehicle.velocity
         status = {
-            'position': position
+            'position': position,
             'velocity': velocity,
             'heading':  self.vehicle.heading,
             'mode':     mode
