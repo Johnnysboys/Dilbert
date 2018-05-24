@@ -44,11 +44,10 @@ class EchoWebSocket(websocket.WebSocketHandler):
 
     def stream_status(self, stop, interval=0.25):
         while not stop.isSet():
-            print(self.drone_handler.status())
+            data = self.drone_handler.status()
             response = {
                 'type': 'status',
-                'data': self.drone_handler.status()
-            }
+                'data':}
             response_json = json.dumps(response, indent=2)
             self.write_message(response)
             time.sleep(interval)
