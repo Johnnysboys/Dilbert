@@ -33,7 +33,7 @@ class EchoWebSocket(websocket.WebSocketHandler):
             drone_handler.arm(True)
         if request['command'] == 'go':
             alt = 0.3
-            if 'alt' in request
+            if 'alt' in request:
                 alt = request['alt']
             drone_handler.fucking_fly_bitch(alt)
 
