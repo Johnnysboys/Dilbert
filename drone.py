@@ -33,7 +33,7 @@ class Drone:
             'position': position,
             'velocity': velocity,
             'heading':  self.vehicle.heading,
-            'mode':     mode
+            'mode':     mode,
             'armed':    self.vehicle.armed,
             'battery':  battery
         }
