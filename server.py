@@ -49,7 +49,7 @@ class EchoWebSocket(websocket.WebSocketHandler):
                 'type': 'status',
                 'data': data
             }
-            response_json = json.dumps(response, default=dumper, indent=2)
+            response_json = json.dumps(response, default=self.dumper, indent=2)
             self.write_message(response)
             time.sleep(interval)
 
