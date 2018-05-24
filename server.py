@@ -58,7 +58,7 @@ class EchoWebSocket(websocket.WebSocketHandler):
         self.streamer_thread.join()
 
 
-drone_handler = Drone("tcp:127.0.0.1:5760")
+drone_handler = Drone("/dev/ttyACM0")
 auth_handler = Auth()
 application = web.Application(
     [("/", EchoWebSocket, dict(auth_handler=auth_handler, drone_handler=drone_handler)), ])
