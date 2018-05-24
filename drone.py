@@ -21,7 +21,7 @@ class Drone:
 
     def run(self):
         self.vehicle = dronekit.connect(
-            self.connection_string, wait_ready=False)
+            self.connection_string, wait_ready=True)
         self.connected = True
 
     def status(self):
