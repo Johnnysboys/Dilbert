@@ -53,9 +53,9 @@ class Drone:
         print("FUCKING FLYING")
         while not arm_and_takeoff(alt, self.vehicle):
             pass
-        goto(0, 0, self.vehicle, self.vehicle.simple_goto)
-        condition_yaw(0, self.vehicle, False)
-        time.sleep(5)
+        goto(1, 0, self.vehicle, self.vehicle.simple_goto)
+        condition_yaw(90, self.vehicle, relative=True)
+        time.sleep(10)
         condition_yaw(180, self.vehicle, False)
 
         land(self.vehicle)
